@@ -1,0 +1,23 @@
+#docker images
+
+#docker pull <image_name>:<tag>  //You can skip the pull command, run command will automatically download the image if it is not available locally
+
+#docker run <image_name>:<tag> //Will create a new container
+
+#docker run -d <image_name>:<tag> //Will run the container in the backgroud
+
+#docker run -d -p <host_port>:<container_port> -d <image_name>:<tag> //To bind the container port to a local port
+
+#docker run --name <container_name>-d -p <host_port>:<container_port> -d <image_name>:<tag> //To assign a user friendly name
+
+#docker start <container_id/name>
+
+#docker stop <container_id/name>
+
+#docker ps
+
+#docker ps -a   //Will list all the containers running and stopped
+
+#docker logs <container_id/name>
+
+#docker build -t <image_name>:<image_version> <docker_image_path>
