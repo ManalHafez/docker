@@ -1,18 +1,60 @@
-#docker images
+//Install docker 
+https://docs.docker.com/engine/install/
+#sudo apt-get install -y docker-ce docker-ce-cli
+- To allow users to run docker commands without sudo command: #usermod -a -G docker <user_name>
+=================================================================================================================
+/Docker general commands
+
+#docker version //Display docker client & engine versions
+
+#docker info //Display system-wide information
+
+#docker start/stop/restart docker
+=================================================================================================================
+//Dokcer Images
+
+#docker images = #docker image ls
+
+#docker image ls -a //Will list all the docker images including the intermediate ones
 
 #docker images --no-trunc //Will show the full image id
 
-#docker pull <image_name>:<tag>  //You can skip the pull command, run command will automatically download the image if it is not available locally
+#docker image inspect <image_name> //Will display all the image information
+
+#docker image history <image_name>  //Will provide all the updates history for this image and ports that will be exposed when you run the container
+
+#docker build -t <image_name>:<image_version> <docker_image_path>
+
+#docker rmi <image_id/name> = #docker image rm <image_id/name> //To remove a docker image
+
+#docker image rm -f <image_id/name> //To force remove a docker image that is used by a container. This will only remove the image tag and will become a dangling image.
+
+#docker image prune //To delete any images that are not used by any containers and has no tags<image_id/name> //To remove a docker image
+
+//To faltten an image:
+#docker run -d <image_name>
+#docker export <container_name> > arhive.tar
+#cat archive.tar | docker import - <new_image_name>
+=================================================================================================================
+//Docker Containers
 
 #docker run <image_name>:<tag> //Will create a new container
 
-#docker run -d <image_name>:<tag> //Will run the container in the backgroud
+#docker run -d <image_name>:<tag> //Will run the container in detached mode
 
-#docker run -d -p <host_port>:<container_port> -d <image_name>:<tag> //To bind the container port to a local port
+#docker run -d --restart unless-stopped <image_name>:<tag> //Will restart the container ounless stopped manually
+--restart <on, on-failure, always, unless-stopped>
+--rm //Will remove the conatiner after exit and can't be used with --restart
+--memory //hard limit
+--memory-reservatio //soft limit
+
+#docker run -d -p <host_port>:<container_port> <image_name>:<tag> //To bind the container port to the specified local port
+
+#docker run -d -P <image_name>:<tag> //To bind the container port to a random local port
 
 #docker run --name <container_name> -d -p <host_port>:<container_port> -d <image_name>:<tag> //To assign a user friendly name
 
-#docker run -it <image_id/name>  //To start the coker container with intercative terminal
+#docker run -it <image_id/name>  //To start the docker container with intercative terminal
 
 #docker start <container_id/name>
 
@@ -22,18 +64,94 @@
 
 #docker ps -a  = #docker container ls -a //Will list all the containers running and stopped
 
-#docker attach <container_id/name> //Will start an intercative termial session in the container
-
-#docker logs <container_id/name>
-
-#docker build -t <image_name>:<image_version> <docker_image_path>
-
-#docker history <image_name>  //Will provide all the updates history for this image
-
 #docker container rm <container_id/name> //To remove a docker container
 
-#docker rmi <image_id/name> //To remove a docker image
+#docker container inspect <container_id/name> //To list all the container detailes
+=================================================================================================================
+//Interact with containers
 
-//To upload an image to docker hub:
+#docker attach <container_id/name> //Will start an intercative termial session in the container
+
+#docker container exec -it <container_id/name> sh //Will start a shell session in the container
+
+#docker logs <container_id/name>
+=================================================================================================================
+//Docker Volumes
+#docker volume create <volume_name>  //Will create a new volume that is stored under /var/lib/docker/volumes/
+
+#docker volume inspect <volume_name>
+
+#docker volume ls
+#docker run -d --name <conatiner_name> --mount source=<volume_name>,target=<mount_point> 
+= #docker run -d --name <conatiner_name> -v <volume_name>:<mount_point>  //Will mount the volume to the container
+=================================================================================================================
+//Docker Systemd Unit File
+/usr/lib/systemd/system/docker.service
+
+=================================================================================================================
+Docker storage driver
+https://docs.docker.com/engine/storage/drivers/select-storage-driver/
+- The docker storage driver can ne changed from the configuration file /etc/docker/daemon.json or add the flag
+--storage-driver in the docker start command/script/systemd unit file
+- Docker storage driver is a system wide setting
+=================================================================================================================
+Docker logging driver
+https://docs.docker.com/engine/logging/configure/
+- The docker logging driver can ne changed from the configuration file /etc/docker/daemon.json or add the flags
+--log-driver to specify the logging driver
+--log-opts to specify the logging options
+in the docker start command/script/systemd unit file
+-Docker logging driver is a system wide setting and can be over-written per container
+=================================================================================================================
+Docker Registry
+#docker run -d -e REGISTRY_LOG_LEVEL=debug -p 5000:5000 --name local-registry --restart=always registry
+
+#docker logs registry
+
+#docker login  <registry_URL> //To push images, access private images in Dockerhub or access private registry
+If URL is not specified, DockerHub is set by default
+
+//To push an image to a private/local registry
+#docker tag <image_id/image_name> <registry_hostname>/<image_name>:<image_tag>
+#docker push <registry_hostname>/<image_name>:<image_tag>
+
+#docker pull <image_name>:<tag>  = #docker image pull <image_name>:<tag> //You can skip the pull command, run command will automatically download the image if it is not available locally
+
+#docker search <key_word>  //Only works with DockerHub, not private registry
+=================================================================================================================
+Docker Content Trust
+
 #docker login
-#docker push <image_id/name>
+
+#docker trust key generate <signer_name>  //Will generate a trust key (.pub)
+
+#docker trust signer add --key <key_file> <signer_name> <repo>  ///To add a signer to a repo
+
+#docker trust sign <repo:tag>  //Will generate the signature and push both the image and the signature to the registry
+
+#export DOCKER_CONTENT_TRUST=1 //Will enable docker content trust and "docker push" will act like "docker trust"
+
+
+=================================================================================================================
+Docker Swarm
+//Manager
+#docker swarm init --adververtise-addr <ip_address>
+#docker node ls
+#docker swarm join-token worker  //To list the joint token for a worker to join the swarm
+
+//Firewall rules to add to allow worker to join docker swarm
+sudo ufw allow 30000:35000/tcp
+sudo ufw allow 2377/tcp
+sudo ufw allow 7946/tcp
+sudo ufw allow 7946/udp
+sudo ufw allow 4789/udp
+sudo ufw reload
+
+//Worker:
+#docker swarm leave
+#docker swarm join --token <join_token> <master_IP:port>
+
+//To backup swarm configurations:
+#docker stop docker
+#tar -zcvf swarm.bkup /var/lib/docker/swarm
+#docker start docker
