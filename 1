@@ -48,7 +48,7 @@ Deployments
 
 #kubectl delete deployment <deployment_name>
 
-#kubectl describe deployemnts 
+#kubectl describe deployemnt <deployment_name> 
 
 #kubectl rollout status <deployment_name> //Will show deployment events
 
@@ -72,7 +72,7 @@ Deployments
 
 #kubectl get pods,svc,deployments
 ===============================================================================================
-//Namespaces & Compute Quota
+//Namespaces
 
 #kubectl get pod --namespace=<ns_name>
 
@@ -81,34 +81,3 @@ Deployments
 #kubectl create namespace <ns_name>
 
 #kubectl get pods --all-namespaces
-
-#kubectl create -f <compute_quota_definition_file>
-===============================================================================================
-//Env Variable
-
-//ConfigMap
-#kubectl create -f <configmap_definition_file>
-
-#kubectl get configmaps
-
-#kubectl describe configmaps
-
-#kubectl create configmap <congfigmap_name> --from-literal=<key>=<value>
-
-#kubectl create configmap <congfigmap_name> --from-file=<configmap_file>
-
-//Secrets
-#kubectl create -f <secret_definition_file>
-
-#kubectl create secret generic <secret_name> --from-literal=<key>=<value>
-
-#kubectl create secret generic <secret_name> --from-file=<secret_file>
-
-#kubectl get secrets
-
-#kubectl describe secrets //You will see the encoded values
-
-#kubectl describe secret <secret_name> -o yaml
-
-//To get the encoded format of a secret:
-echo -n "secret" | base64

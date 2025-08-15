@@ -4,6 +4,7 @@ kind: pod
 
 metadata: 
   name: myapp-prod
+  namespace: dev
   labels:
     app: myapp
     type: front-end
@@ -12,3 +13,6 @@ spec:
   conatainers:
     - name: nginx-container
       image: nginx
+      env:
+        - name: app-color
+          value: red

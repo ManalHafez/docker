@@ -111,7 +111,7 @@ https://docs.docker.com/engine/install/
 if you type exit, the both the session and container will be terminated.
 To detach, press [CTRL + p + q]
 
-#docker run -e <variable_name>=<variable_value> <image_name>  //To set an enviorment variable
+#docker run -e <variable_name>=<variable_value> <image_name> = #docker run -env <variable_name>=<variable_value> <image_name>  //To set an enviorment variable
 
 #docker start <container_id/name>  
 
