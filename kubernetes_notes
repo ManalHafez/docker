@@ -1,0 +1,65 @@
+//Cluster & Nodes
+#kubectl cluster-info
+
+#kubectl get nodes
+
+#kubectl get all //Will list all the objects: pods, replicasets, deployments,...
+===============================================================================================
+//Pods
+#kubectl run <pod_name> --image <image_name> //By default dockerhub is the default registry. Will create a pod, replicaset and deployment by default
+
+#kubectl create -f <pod_definition_file> = #kubectl apply -f <pod_definition_file> //To create a pod using the definition file
+
+#kubectl describe pod <pod_name>
+
+#kubectl get pods
+
+#kubectl get pods -o wide //To list pods along with the pod ip address and the hosting node.
+===============================================================================================
+//Replication Controller & Replica Set
+
+#kubectl create -f <RC_definition_file> = #kubectl apply -f <RC_definition_file> //To create a RecplicationController/ReplicaSet using the definition file
+
+//To update the replica number
+#kubectl replace -f <updated_RC_definition_file>
+#kubectl scale --replica=<#_of_replicas> -f <updated_RC_definition_file> 
+#kubectl scale --replica=<#_of_replicas> scaleset <scaleset_name> //Will not update the file
+#kubectl edit replicaset <replicaset_name> //Will open the replicaset running configurations file in a text editor format. This is different from the original definition file
+                                            //And changes will be applied immedietly after uodating and closing the file.
+
+
+#kubectl get replicationcontroller
+
+#kubectl get replicaset - #kubectl get rs
+
+#kubectl get rs <replicaset_name> --show-labels
+
+#kubectl describe replicaset <replicaset_name>
+
+#kubectl delete replicaset <replicaset_name> //Deletes the replicaset along with the underlying pods
+===============================================================================================
+Deployments
+
+#kubectl get deployments = #kubectl get deploy
+
+#kubectl create -f <deployment_definition_file> --record //Create the deployment, replicaset and pods
+
+//--record will record the create/apply/edit commands in the history
+
+#kubectl delete deployment <deployment_name>
+
+#kubectl describe deployemnt 
+
+#kubectl rollout status <deployment_name> //Will show deployment events
+
+#kubectl rollout history <deployment_name>  //Will show the deployments versions
+
+//Rolling Updates
+#kubectl apply -f <updated_deployment_definition_file> --record
+#kubectl set image <deployment_name> <image_name:tag> --record  //The deployment definition file will be different from the running configurations.
+#kubectl edit deployment <deployment_name>  --record   //Will open the deployment running configurations file in a text editor format. This is different from the original definition file
+                                            //And changes will be applied immedietly after uodating and closing the file.
+
+
+//Rollback
+#kubectl rollout undo <deployment_name> --record

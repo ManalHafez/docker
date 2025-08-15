@@ -3,15 +3,47 @@ https://docs.docker.com/engine/install/
 #sudo apt-get install -y docker-ce docker-ce-cli
 - To allow users to run docker commands without sudo command: #usermod -a -G docker <user_name>
 =================================================================================================================
-/Docker general commands
+//Connect to Docker Daemon
+
+#docker -H=<docker_server_ip:port>  <sub_command> //To connect to remote docker server
+
+#export DOCKER_HOST=tcp://<docker_server_ip:port>
+
+#export DOCKER_TLS_VERIFY=1 //To enable secure connection with docker daemon
+
+#docker version  //A small test to verify connection with docker server
+
+#docker --version //Will only list the client version
+
+=================================================================================================================
+//Docker general commands
 
 #docker version //Display docker client & engine versions
 
-#docker info //Display system-wide information
+#docker info = #docker system info//Display system-wide information
 
-#docker start/stop/restart docker
+#systemctl start/stop/restart docker
+
+//By default docker daemon only listen locally through the unix socket in /var/run/docker.sock (IPC)
+#dockerd  --host tcp://<host_ip>:2375  //To start the docker daemon and listen through tcp port.
+#export DOCKER_HOST="tcp://<host_ip>:2375"
+
+#dockerd --debug  //To start the docker daemon in debug mode
+
+#docker system events --since <timestamp>  //Shows docker logs related to networks, containers, images and volumes.
+
+#journalctl -u docker.service
+
+#cat /etc/docker/daemon.json  //To view customized docker configurations
+
+#cat /usr/lib/systemd/system/docker.service   //Docker Systemd Unit File
 =================================================================================================================
 //Dokcer Images
+
+//image syntax --> <registry>/<account/user_name>/<repo/image_name>:tag
+- If the registry is not specified, it is DockerHub by default
+- If the account/user name is not specified, it is an official image
+- If the tag if not specified, the "latest" tag is used by default
 
 #docker images = #docker image ls
 
@@ -23,77 +55,199 @@ https://docs.docker.com/engine/install/
 
 #docker image history <image_name>  //Will provide all the updates history for this image and ports that will be exposed when you run the container
 
-#docker build -t <image_name>:<image_version> <docker_image_path>
+//To create a customized image
+#vi Dockerfile
+
+#docker build -t <image_name>:<image_version> <docker_image_path>  //By defulat it will look for Dockerfile
+//If -t is not used the latest tag will be used by default
+#docker build -f <file_name> -t <image_name>:<image_version> <docker_image_path> //To specify the docker file name
+#docker build -t <image_name>:<image_version> --build-arg <var_name>=<value> <docker_image_path> //To pass the argument value
+#docker build  --no-cache  //Do not use cache when building the image
 
 #docker rmi <image_id/name> = #docker image rm <image_id/name> //To remove a docker image
 
 #docker image rm -f <image_id/name> //To force remove a docker image that is used by a container. This will only remove the image tag and will become a dangling image.
 
-#docker image prune //To delete any images that are not used by any containers and has no tags<image_id/name> //To remove a docker image
+#docker image prune  //To delete any images that are not used by any containers and has no tags<image_id/name> 
+#docker image prune -a //To delete all un-used images (not used by containers)
 
-//To faltten an image:
-#docker run -d <image_name>
-#docker export <container_name> > arhive.tar
-#cat archive.tar | docker import - <new_image_name>
+//To faltten an image or to export a container to an image:
+#docker container export <container_name> > arhive.tar
+#docker image import archive.tar <new_image_name:tag>
+
+//To create a new image from a running container:
+//This can be used for debugging, but not recommended for prod setups
+//It is recommended to stop the container first before the commit
+#docker container commit -a <author_name> <container_name> <new_image_name:tag>
+
+//To save/archive an image (can be used for backup and transferring images to hosts with no access to internet/registries):
+#docker image save <image_name:tag> -o <output_file_name>.tar
+#docker image load -i <output_file_name>.tar
 =================================================================================================================
 //Docker Containers
 
-#docker run <image_name>:<tag> //Will create a new container
+#docker container create <image_name>  //Will create a container without running it
+
+#docker run <image_name>:<tag> //Will create and run a new container in attached mode
 
 #docker run -d <image_name>:<tag> //Will run the container in detached mode
 
 #docker run -d --restart unless-stopped <image_name>:<tag> //Will restart the container ounless stopped manually
 --restart <on, on-failure, always, unless-stopped>
 --rm //Will remove the conatiner after exit and can't be used with --restart
---memory //hard limit
---memory-reservatio //soft limit
+--hostname=<hostname>  //Will set the container hostname (different from the container name)
 
-#docker run -d -p <host_port>:<container_port> <image_name>:<tag> //To bind the container port to the specified local port
+#docker run -d -p <host_port>:<container_port> <image_name>:<tag> //To bind the container port to the specified local port on all network interfaces in the host
 
-#docker run -d -P <image_name>:<tag> //To bind the container port to a random local port
+#docker run -d -p <host_ip>:<host_port>:<conatiner_port> <image_name>:<tag> //To bind the container port to the specified host port and IP address
+
+#docker run -d -p <conatiner_port> <image_name>:<tag> //To bind the specified container port to a random port in the docker host
+
+#docker run -d -P <image_name>:<tag> //To bind all the exposed container ports to a random local port (the port value may change after restarting the container)
 
 #docker run --name <container_name> -d -p <host_port>:<container_port> -d <image_name>:<tag> //To assign a user friendly name
 
 #docker run -it <image_id/name>  //To start the docker container with intercative terminal
+if you type exit, the both the session and container will be terminated.
+To detach, press [CTRL + p + q]
 
-#docker start <container_id/name>
+#docker run -e <variable_name>=<variable_value> <image_name>  //To set an enviorment variable
 
-#docker stop <container_id/name>
+#docker start <container_id/name>  
+
+#docker stop <container_id/name> //SIGTERM --> SIGKILL
+
+#docker container pause <container_id/name>  //SIGSTOP
+
+#docker conatiner unpause <container_id/name> //SIGCONT
+
+#docker conatiner KILL --signal=<SIG_No>  <container_id/name>
 
 #docker ps = #docker container ls
 
+#docker conatiner ls -aq //Will show only the containers id (running, created and stopped)
+
+#docker conatiner ls -q //Will show only the containers id (running)
+
+#docker conatiner ls -l //Will list the last created container
+
 #docker ps -a  = #docker container ls -a //Will list all the containers running and stopped
 
-#docker container rm <container_id/name> //To remove a docker container
+#docker container rm <container_id/name> //To remove a stopped container
+
+#docker container stop $(docker container ls -q);docker container rm $(docker container ls -aq)  //To stop and delete all conatiners
+
+#docker container prune //Will remove all stopped containers
 
 #docker container inspect <container_id/name> //To list all the container detailes
+
+#docker container rename <old_name> <new_name>
+=================================================================================================================
+Limit CPU & memory
+
+//Each container gets a CPU share of 1024 assigned by default.
+
+#docker run --cpu-shares=512 <image_name> //To limit the CPU shared used by a conatiner
+
+#docker run --cpus=2 --memory=100mb <image_name>  //To sel the CPU & memory limit for the container
+
+#docker container update --cpu=4 <conatiner_name>  //To update the CPU limit for existing container
+
+#docker run --cpusets-cpu=3-4" <image_name> //To specifiy the CPUs accessed by a container 
+
+#docker container run --memory=512m --memory-swap=512m <image_name> //hard limit the momory=512 and swap=0
+                      --memory-reservation //soft limit
+
+#docker container run --memory=512m --memory-swap=768m <image_name> //hard limit the momory=512 and swap=256
+
+//If a container try to use more memory than tha hard limit, it will be killed ny the OOM
+//The memory-swap value is the total the memory and swap. 
+//f you set --memory-swap to -1 in Docker, the container gets unlimited swap
 =================================================================================================================
 //Interact with containers
 
-#docker attach <container_id/name> //Will start an intercative termial session in the container
+#docker attach <container_id/name> //Will re-attach the container. Exit will terminate both the container and session.
 
 #docker container exec -it <container_id/name> sh //Will start a shell session in the container
 
+#docker container exec <container_name/id> <command>
 #docker logs <container_id/name>
+
+#docker container cp <container_name/id>:<source_file_path> <target_file_path>
+=================================================================================================================
+//Monitor container 
+
+#docker conatiner logs <conatiner_name/id>
+
+#docker container stats //Will show CPU and memory utilization/limits for the running containers
+
+#docker conatiner top <container_name/id>  //Will list the conatiner PID in the docker host
+=================================================================================================================
+//Docker Compose
+
+//docker compose is not installed by default with the docker packages: https://docs.docker.com/compose/
+
+#vi docker-compose.yml
+
+#docker compose up //Will create and start containers only on the docker host (not cluster) in the foreground
+
+#docker compose up -d
+
+#docker compose stop //Stops running containers without removing them.
+
+#docker compose down  //Stops containers and removes containers, networks, volumes, and images created by up.
+
+#docker compose logs
+
+#docker compose ps  //List running containers thatb were started by "docker compose up"
+
+#docker compose top //Display the running processes
 =================================================================================================================
 //Docker Volumes
 #docker volume create <volume_name>  //Will create a new volume that is stored under /var/lib/docker/volumes/
 
 #docker volume inspect <volume_name>
 
+//To view the image/container files location under Data section
+#docker container inspect <container_id/name> 
+#docker image inspect <image_id/name>
+
 #docker volume ls
-#docker run -d --name <conatiner_name> --mount source=<volume_name>,target=<mount_point> 
-= #docker run -d --name <conatiner_name> -v <volume_name>:<mount_point>  //Will mount the volume to the container
+
+#docker volume rm <volume_name>  //Will remove the volume if it is not used by a container
+
+#docker volume rm -f <volume_name> //Will force remove the volume if it is not used by a container
+
+#docker volume prune //Will remove any volume that is not used by a container
+
+To mount an extrenal storage (bind mount/volume) to a container:
+
+#docker run --mount type=<volume/bind>source=<volume_name/bind_mount_path>,target=<mount_point>[,readonly] <image_name>  //type is optional, --mount is prefered and can be used with both services and containers
+
+#docker run -v <volume_name/bind_mount_point>:<mount_point>[:ro] <image_name>  //Can't be used with services, only containers. If the volume doesn't exist, it will be created.
 =================================================================================================================
-//Docker Systemd Unit File
-/usr/lib/systemd/system/docker.service
+//Docker Network
+
+#docker network create --driver bridge --subnet "x.x.x.x/y" --gateway "x.x.x.x" <network_name>  //If driver is not specified, bridge is used by default.
+
+#docker network ls
+
+#docker network inspect <network_name>
+
+#docker network connect/disconnect <network_name> <container>  //To connect a container with a new network
+
+#docker network rm <network_name>
+
+#docker network prune //Will remove any network not used by a container and are user-defined. It will not remove the default networks
 
 =================================================================================================================
-Docker storage driver
+Docker storage 
 https://docs.docker.com/engine/storage/drivers/select-storage-driver/
 - The docker storage driver can ne changed from the configuration file /etc/docker/daemon.json or add the flag
 --storage-driver in the docker start command/script/systemd unit file
 - Docker storage driver is a system wide setting
+
+#docker system df -v  //To list actual disk usage for images, containers and volumes
 =================================================================================================================
 Docker logging driver
 https://docs.docker.com/engine/logging/configure/
@@ -102,9 +256,11 @@ https://docs.docker.com/engine/logging/configure/
 --log-opts to specify the logging options
 in the docker start command/script/systemd unit file
 -Docker logging driver is a system wide setting and can be over-written per container
+
+#docker container run -d --log-driver=<driver_name> <image_name>  //To specify the logging driver for a container
 =================================================================================================================
 Docker Registry
-#docker run -d -e REGISTRY_LOG_LEVEL=debug -p 5000:5000 --name local-registry --restart=always registry
+#docker run -d -e REGISTRY_LOG_LEVEL=debug -p 5000:5000 --name local-registry --restart=always registry:2
 
 #docker logs registry
 
@@ -112,12 +268,17 @@ Docker Registry
 If URL is not specified, DockerHub is set by default
 
 //To push an image to a private/local registry
-#docker tag <image_id/image_name> <registry_hostname>/<image_name>:<image_tag>
-#docker push <registry_hostname>/<image_name>:<image_tag>
+#docker image tag <image_id/image_name> <registry_hostname>/<image_name>:<image_tag>
+#docker image push <registry_hostname>/<image_name>:<image_tag>
+
+#curl -X GET localhost:5000/v2/_catalog   //To get a list of the images available in a local repo
 
 #docker pull <image_name>:<tag>  = #docker image pull <image_name>:<tag> //You can skip the pull command, run command will automatically download the image if it is not available locally
 
-#docker search <key_word>  //Only works with DockerHub, not private registry
+#docker search <key_word>  //Only works with DockerHub, not private registry. Will display 25 results.
+#docker search <key_word> --limit 2 //To limit the search results
+#docker search --filter stars=10 httpd
+#docker search --filter is-officail=true httpd
 =================================================================================================================
 Docker Content Trust
 
@@ -129,15 +290,28 @@ Docker Content Trust
 
 #docker trust sign <repo:tag>  //Will generate the signature and push both the image and the signature to the registry
 
+#docker trust inspect <image_name:tag>
+
 #export DOCKER_CONTENT_TRUST=1 //Will enable docker content trust and "docker push" will act like "docker trust"
-
-
 =================================================================================================================
-Docker Swarm
+Docker Network
+#docker network create --opt encrypted --driver overlay <network_name>  //Will encrypt the traffic of all the containers/services connected to this network
+
+#ip netns add <namespace_name> //Add a network namespace
+
+#ip netns  //List network namespaces
+
+#ip netns exec <namespace_name> ip link = #ip -n <namespace_name> link  //To list the network interfaces in the specified namespace
+=================================================================================================================
+//Docker Swarm
+
 //Manager
 #docker swarm init --adververtise-addr <ip_address>
+#docker system info | grep -i swarm
 #docker node ls
 #docker swarm join-token worker  //To list the joint token for a worker to join the swarm
+#docker swarm join-token manager  //To list the joint token for a manager to join the swarm
+
 
 //Firewall rules to add to allow worker to join docker swarm
 sudo ufw allow 30000:35000/tcp
@@ -151,7 +325,149 @@ sudo ufw reload
 #docker swarm leave
 #docker swarm join --token <join_token> <master_IP:port>
 
+#docker node inspect <node_name> --pretty  //To find more info about the swarm node
+
+//Node promotion can only be done from the manager node
+
+#docker node promote <worker_name> //This will change the node type from worker to manager
+
+#docker node demote <manager_name> //This will change the node type from manager to worker
+
+#docker node update --availability drain/active <worker_name>  //To update the worker status
+
+//To remove a node from swarm
+#docker node update --availability drain <worker_name>  //From the manager
+#docker swarm leave  //From the worker node
+#docker node rm <worker_name> //From the manager
+
+//To force create a new cluster (in manager failure scenario), all the nodes and services info will not be removed after re-initialization
+Or you can promote one of the worker nodes to manager
+#docker swarm init --force-new-cluster --adververtise-addr <ip_address>
+=================================================================================================================
 //To backup swarm configurations:
 #docker stop docker
 #tar -zcvf swarm.bkup /var/lib/docker/swarm
 #docker start docker
+
+//To restore swarm configuration:
+#docker stop docker
+#tar -zxvf /tmp/swarm.bkup -C /
+#docker start docker
+#docker swarm init --force-new-cluster --adververtise-addr <ip_address>
+=================================================================================================================
+//To force service workload distrebution on the swarm cluster
+docker service update --force <service_name>
+
+=================================================================================================================
+//Auto-lock
+
+//This will generate the key for swarm lock. It needs to be stored in a secure vault.
+#docker swarm init --auto-lock=true
+#docker swarm update --auto-lock=true
+
+#docker swarm unlock  //You will be promopted to provide the key to unlock the manager node, which usually happens after rebbots/failure
+
+#docker swarm unlock-key  //To return the current key used inside a Docker Swarm cluster
+=================================================================================================================
+//Docker services
+
+#docker service create --replicas=x <image_name> //To create a docker service in the docker swarm cluster. 
+//Docker service command must be run from the docker swarm manager node, not the worker node.
+
+#docker service create --name=<service_name> -p <host_port>:<container_port> <image_name> //if replica is not set, the default is 1
+
+#docker service ls
+
+#docker service ps <service_name>  //Will list the container/tasks associated with this service
+
+#docker service inspect <service_name> --pretty 	
+
+#docker service logs <service_name>
+
+#docker service rm <service_name>
+
+//To scale up/down the service
+#docker service update --replicas=x <service_name>
+#docker service scale <service_name>=x
+
+#docker service update --image=<image_name:tag> <service name>  //Will replace the conatiners with the new images in a rolling-update manner
+
+#docker service update --update-delay 60s --image=<image_name:tag> <service name> //Will wait 60 seconds after each container update
+
+#docker service update --update-parallelism=y --image=<image_name:tag> <service name> //Will update 3 conatiners parallel
+
+#docker service update --update-failure-action <pause/continue/rollback> --image=<image_name:tag> <service name> //To spceify the default action if one of the containers fail to update
+//If not specified pause is the default
+
+//To rollback the update
+#docker service update --rollback <service_name>  
+#docker service rollback <service_name>
+
+#docker service create --mode=global <image_name>  //Will create one instalnce per worker
+=================================================================================================================
+//Swarm Service Placement using labels and constraints
+
+#docker node update --label-add type=<type_name> <node_name>
+
+#docker service create --constraint=node.labels.type==<type_name> <image_name> //+ Affinity
+#docker service create --constraint=node.role==worker <image_name>
+
+#docker service create --constraint=node.labels.type!=<type_name> <image_name> //- Affinity
+#docker service create --constraint=node.role!=manager <image_name>
+=================================================================================================================
+//Docker Config File
+
+//To add a config file
+#docker config create <config_name> <file_path>
+ex:#docker config create nginx-conf /tmp/nginx.conf
+
+#docker service create --replicas=x --config <config_name> <image_name> //To share a file with all the conatiners in a service under /
+#docker service create --replicas=x --config src=<config_name>,target="<container_path>" //To share the file in a specific folder path in the conatiner
+
+//To remove a Docker Config File
+#docker service update --config-rm <config_name> <service_name>  //To remove/detach the config file from the service
+#docker config rm <config_name>
+
+//To rotate/update a Docker config file
+#docker config create <new_config_name> <file_path>
+#docker service update --config-rm <old_config_name> --config-add <new_config_name> <service_name>
+=================================================================================================================
+//Overlay Networks
+
+#docker network create --driver overlay --subnet 16.15.0.0/16 --gateway 16.15.0.1 <network_name>
+
+#docker network create --driver overlay --attachable <network_name>  //To allow both services and stand-alone containers to connect to the overlay network
+
+#docker network create --driver overlay --opt encrypted <network_name> //To encrypt application (service) traffic using IPSEC encryption
+
+#docker service create --network <network_name> <image_name>
+
+#docker network rm <network_name>
+
+#docker network prune
+
+//Using --publish instead of -p is recommended (easier to read)
+//If protocol is not specified, tcp is the default
+#docker service create --publish published=<host_port>,target=<conatiner_port>,protocol=<tcp/udp> <image_name>
+
+#docker service create --publish published=<host_port>,target=<conatiner_port>,protocol=<tcp/udp>,mode=host <image_name> 
+//To limit access to the service/conatiners from nodes hosting the service (not all the nodes in the swarm cluster)
+//If mode is not specified, the default is ingress.
+
+#docker network create --driver macvlan -o parent=eth0 <network_name>  //To create a MACVLAN network
+=================================================================================================================
+Docker Stack
+
+#docker stack deploy <stack_name> --compose-file <compose_file_name>  //To create a new stack or update an existing one.
+
+#docker stack ls
+
+#docker stack services <stack_name>
+
+#docker stack ps <stack_name>
+
+#docker stack rm <stack_name>
+
+=================================================================================================================
+//Kubernetes
+kubectl run --replicas=x <image_name>
