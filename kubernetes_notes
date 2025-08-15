@@ -112,3 +112,17 @@ Deployments
 
 //To get the encoded format of a secret:
 echo -n "secret" | base64
+===============================================================================================
+//Persistent Volume & Claims & Storage Classes
+
+#kubectl create -f <pv_definition_file>
+
+#kubectl create -f <pvc_definition_file>
+
+#kubectl get persistentvolume
+
+#kubectl get pvc = #kubectl get persistentvolumeclaim 
+
+#kubectl get sc = #kubectl get storageclass
+
+
