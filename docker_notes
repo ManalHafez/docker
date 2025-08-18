@@ -149,7 +149,7 @@ Limit CPU & memory
 
 #docker run --cpu-shares=512 <image_name> //To limit the CPU shared used by a conatiner
 
-#docker run --cpus=2 --memory=100mb <image_name>  //To sel the CPU & memory limit for the container
+#docker run --cpus=2 --memory=100mb <image_name>  //To set the CPU & memory limit for the container
 
 #docker container update --cpu=4 <conatiner_name>  //To update the CPU limit for existing container
 
