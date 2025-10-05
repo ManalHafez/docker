@@ -10,27 +10,33 @@
 
 #kubectl create -f <pod_definition_file> = #kubectl apply -f <pod_definition_file> //To create a pod using the definition file
 
+#kubectl apply -f <pod_definition_file> //Can be also used to update the pod if the definition file is updated
+
 #kubectl describe pod <pod_name>
 
 #kubectl get pods
 
 #kubectl get pods -o wide //To list pods along with the pod ip address and the hosting node.
+
+#kubectl delete pod <pod_name>
+
+#kubectl run <pod_name> --image <image_name> --dry-run=client -o yaml > <pod_definition_file>	//This will create a pod definition file based on the command and will not create a pod (Dry Run)
 ===============================================================================================
 //Replication Controller & Replica Set
 
 #kubectl create -f <RC_definition_file> = #kubectl apply -f <RC_definition_file> //To create a RecplicationController/ReplicaSet using the definition file
 
 //To update the replica number
-#kubectl replace -f <updated_RC_definition_file>
+#kubectl replace -f <updated_RC_definition_file>	//To replace the replicaset definition file
 #kubectl scale --replica=<#_of_replicas> -f <updated_RC_definition_file> 
-#kubectl scale --replica=<#_of_replicas> scaleset <scaleset_name> //Will not update the file
+#kubectl scale --replica=<#_of_replicas> replicaset <scaleset_name> //Will not update the file
 #kubectl edit replicaset <replicaset_name> //Will open the replicaset running configurations file in a text editor format. This is different from the original definition file
                                             //And changes will be applied immedietly after uodating and closing the file.
 
 
 #kubectl get replicationcontroller
 
-#kubectl get replicaset - #kubectl get rs
+#kubectl get replicaset = #kubectl get rs
 
 #kubectl get rs <replicaset_name> --show-labels
 
@@ -43,6 +49,7 @@ Deployments
 #kubectl get deployments = #kubectl get deploy
 
 #kubectl create -f <deployment_definition_file> --record //Create the deployment, replicaset and pods
+#kubectl create deployment <deployment_name> --image=<image_name>
 
 //--record will record the create/apply/edit commands in the history
 
@@ -125,4 +132,17 @@ echo -n "secret" | base64
 
 #kubectl get sc = #kubectl get storageclass
 
+===============================================================================================
+ETCD
 
+#etcdctl version
+
+#etcdctl put <key> <value>
+
+#etcdctl get <key>
+
+#export ETCDCTL_API=3 //To set the etcd API version, by default it will be 2.
+
+#kubectl get pods -n kube-system	//To list all pods that are created for internal K8s usage: etcd, controller, scheduler,.. in kubeadm setups
+
+#ls /etc/kubernetes/manifests/	//To list all the manifest files for internal kubernetes components: etcd, controller, scheduler,.. in kubeadm setups
